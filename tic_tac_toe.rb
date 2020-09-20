@@ -29,30 +29,30 @@ class Board
   end  
      
   def position_handler(player,position)
-     coordinates=position.split("")
-     
-     case coordinates[0]
+     case position[0]
      when "A" then row = 0
      when "B" then row = 1
      when "C" then row = 2
+     else row = "incorrect position, try again" 
      end
-  
-    case coordinates[1]
+      
+    case position[1]
     when "1" then column = 0 
     when "2" then column = 1 
     when "3" then column = 2
+    else column = "incorrect position, try again" 
     end
-    box=[row,column]
-    #puts box
-  
-    if ! self.boxes_filled.include?(position)
-      
+   
+    if ! self.boxes_filled.include?(position) and column.is_a?(Integer) and row.is_a?(Integer)      
       self.board_boxes[row][column]=player.mark
       self.boxes_filled << position
-      player.boxes_filled << position  
+      player.boxes_filled << position
+      position
       #puts self.board_boxes.join("-")
       #puts self.boxes_filled
-    else puts "Incorrec selection, Try again "
+    else
+       "Incorrec selection, Try again "
+      #return "my bad"
     end
   end
 
@@ -78,26 +78,50 @@ class Game
     self.players<<Player.new(player)
   end
 
+  def player_turn(player)
+    result=0
+    loop do
+      puts "#{player.name} make your move :"
+      pos=gets.chomp
+      result = self.board.position_handler(player,pos)
+      self.board.display_board
+      break if result.length == 2
+    end
+  end
+
   def win(player)
     player_moves=player.boxes_filled.join
-    dictionary=["A","B","C","1","2","3"]
-    puts result=self.sub_strings(player_moves,dictionary)
+    lines=["A","B","C","1","2","3"]
+    cross_1=["A1","B2","C3"]
+    cross_2=["A3","B2","C1"]
+    cond1= self.sub_strings(player_moves,lines).values.any? {|number| number>=3}
+    cond2= self.sub_strings(player_moves,cross_1).values.reduce {|total,number| total + number}
+    cond3= self.sub_strings(player_moves,cross_2).values.reduce {|total,number| total + number}
+    if cond1 or cond2==3 or cond3==3
+      return true
+    end  
+
   end
   
   def play
+    someone_win=false
     self.add_player
     self.add_player
     self.players[0].mark="X"
     self.players[1].mark="O"
-    puts "#{players[0].name} Enter coordinate :"
-    pos=gets.chomp
-    self.board.position_handler(players[0],pos)
-    self.board.display_board
-    puts "Enter coordinate :"
-    pos=gets.chomp
-    self.board.position_handler(players[1],pos)
-    self.board.display_board
-    win(players[0])
+    loop do
+    self.player_turn(players[0])
+    break if win(players[0]) or self.board.boxes_filled.length== 9
+    self.player_turn(players[1])  
+    break if win(players[1]) or self.board.boxes_filled.length== 9
+    end
+    if win(players[0]) 
+      puts "#{players[0].name} wins !"
+    elsif win(players[1])
+      puts "#{players[1].name} wins !"
+    else 
+      puts "Shame, Its a Tie " 
+    end    
   end
 end 
 juego=Game.new()
